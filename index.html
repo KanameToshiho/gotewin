@@ -1,0 +1,212 @@
+<html>
+  <head>
+    <title>a</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <style>
+    body{ 
+      margin: 0;
+    }
+      .cam{
+        font-family: arial;
+        font-size: 24px;
+        outline: dashed 1px black;
+        width: 100vw;
+        height: 100vh;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .c{
+        background-color: #bbbbbb;
+      }
+    </style>
+    <div class ="cam">
+    <canvas id="c" class="c"></canvas>
+    <video width="0" height="0" id="vid" src="https://cdn.glitch.global/66834645-fbc3-416e-8c1a-f8d19b96494f/rule.mp4?v=1658546565468"></video>
+    </div>
+    <script>
+
+      function handle(event) {
+          event.preventDefault();
+      }
+      window.onload = function() {
+        document.addEventListener('touchmove', handle, { passive: false });
+        document.addEventListener('mousewheel', handle, { passive: false });
+      }
+       const socket=io("https://onlineapi.glitch.me", {
+	 "force new connection" : true,
+	 "reconnectionAttempts": "Infinity",
+      "transports" : ["websocket"]
+      });
+      var waflag = false;
+      var stflag = false;
+      var turnflag = false;
+      const bcell =7;
+      var lose = false;
+      var mapst = new Array();
+      for(var i=0;i<=200;i++){mapst[i]=0;}
+      var temm = new Array();
+      mapst[0]=1;mapst[bcell*bcell-1]=1;
+      var myx = 0;var myy = 0;var ex = bcell-1;var ey = bcell-1;
+      var yu = 0;
+      window.addEventListener('DOMContentLoaded', (event) => {
+        function main(){
+        can = document.getElementById("c");
+        ctx = can.getContext("2d");
+        if(window.innerWidth<window.innerHeight){can.height=window.innerWidth;can.width=window.innerWidth;}else{can.width=window.innerHeight;can.height=window.innerHeight}
+        ctx.fillStyle="#EEEEEE"
+        ctx.fillRect(0,0,can.width,can.width);
+        ctx.fillStyle="#FFFFFF"
+        ctx.fillRect(can.width/2-can.width/10*3,can.width/2-can.width/30,can.width/10*6,can.width/10*1);
+        ctx.fillRect(can.width/2-can.width/10*3,can.width/2-can.width/30+can.width/10+can.width/30,can.width/10*6,can.width/10*1);
+        ctx.fillStyle = "#FFCC00";
+        dctex2("GOTeWIN",can.width/2,can.height/100*35,100)
+        ctx.fillStyle = "#000000";
+        dctex2("プレイ",can.width/2,can.width/2-can.width/30+can.width/11,can.width/20)
+        dctex2("遊び方",can.width/2,can.width/2-can.width/30+can.width/10+can.width/30+can.width/11,can.width/20)
+        can.addEventListener('click', function(e){
+          if(!waflag && Math.abs(can.width/2-e.offsetX)<=can.width/10*3 && e.offsetY>=can.width/2-can.width/30 && e.offsetY<=can.width/2-can.width/30+can.width/10*1){var name = window.prompt('名前');if(name=="" || name==null){alert("名前を入力してください");}else{emi(name);}}
+          if(!waflag && Math.abs(can.width/2-e.offsetX)<=can.width/10*3 && e.offsetY>=can.width/2-can.width/30+can.width/10+can.width/30 && e.offsetY<=can.width/2-can.width/30+can.width/10+can.width/30+can.width/10*1){
+            //遊び方  
+            let k=can.width/10*2;
+            const vi = document.getElementById("vid");
+            vi.play();
+            const sid=setInterval(function(){ctx.drawImage(vi,k/2,k/2,can.width-k,can.width-k);if(vi.currentTime>=vi.duration){vi.pause();main();clearInterval(sid)}},1000/10);
+            return
+          }
+          console.log(e.offsetX + "," + e.offsetY);
+          
+          if(yu<=3 && yu>0 && e.offsetX>k/2 && e.offsetX<bw+k/2 && e.offsetY>k/2 && e.offsetY<bw + k/2){
+            var tx = e.offsetX-k/2;var ty = e.offsetY-k/2;
+            var vx = Math.floor(tx/(bw/bcell));var vy = Math.floor(ty/(bw/bcell));
+            
+            if(Math.abs(myx-vx)<=1 && Math.abs(myy-vy)<=1){if(Math.abs(myx-vx)!=Math.abs(myy-vy) && mapst[vx+vy*bcell]!=1){ctx.fillStyle="#000000";fbl(myx,myy);myx=vx;myy=vy;ctx.fillStyle="#EEEE00";fbl(myx,myy);temm[yu]=('00' + (vx+vy*bcell)).slice(-2);;yu--;dctex("残り行動回数:"+yu,can.width/2,can.height/10,50);mapst[vx+vy*bcell]=1;}
+              if(yu==0){emi(temm[3]+""+temm[2]+""+temm[1]);console.log(temm[3]+""+temm[2]+""+temm[1]);}                       
+                                                           
+            }
+          console.log(checkaround(myx,myy));
+            if(checkaround(myx,myy)==4 && !lose){
+              lose = true;
+              var tmres = "";
+              for (var i=yu+1;i<=3 && 0<i;i++){tmres= temm[i]+tmres;}
+              tmres= ('000000' + (tmres-0)).slice(-6);if(tmres=="000000"){tmres="0000" + ('00' + (myx+myy*bcell)).slice(-2)}
+              console.log(tmres)
+              ctx.fillStyle = "#EE6600";dctex2("YOU LOSE",can.width/2,can.height/2,100);emi(tmres);socket.emit("lose","")}
+          }
+        });
+        k=can.width/10*2;
+        bw=can.width-k;
+      }
+      main();
+      });
+      function emi(msg){
+        if(!stflag){socket.emit("post", {name: msg});}else{if(turnflag){socket.emit("move", msg);turnflag=false;}}
+        waflag = true;
+      }
+      socket.on("start",(h)=>{
+        console.log(h.name);
+        stflag = true;
+        resetb(h.name);
+      });
+      socket.on("wait",function(){
+        console.log("wait");
+        dctex("マッチング中...",can.width/2,can.height/2,100)
+        turnflag=true;
+        yu=3;
+      });
+      socket.on("win",function(){
+        
+        if(!lose){ctx.fillStyle = "#EE6600";dctex2("YOU WIN",can.width/2,can.height/2,100);yu=0;lose=true;}
+      });
+      socket.on("yourturn",(msg)=>{
+        turnflag=true;
+        
+        console.log(msg);
+        dctex("残り行動回数:3",can.width/2,can.height/10,50);
+        fbl(ex,ey);
+        a = Number(msg.substr(0,2));
+        b = Number(msg.substr(2,2));
+        c = Number(msg.substr(4,2));
+        let t=bcell-1;
+        let z=bcell;
+        ctx.fillStyle="#EE0000"
+        if(a!=0){fbl(t-a%z,t-Math.floor(a/z));}
+        if(b!=0){setTimeout(function(){ctx.fillStyle="#000000";fbl(t-a%z,t-Math.floor(a/z));ctx.fillStyle="#EE0000";fbl(t-b%z,t-Math.floor(b/z));},300)}
+        if(c!=0){setTimeout(function(){ctx.fillStyle="#000000";fbl(t-b%z,t-Math.floor(b/z));ctx.fillStyle="#EE0000";fbl(t-c%z,t-Math.floor(c/z));},600)}
+        
+        
+        mapst[t-a%z+(t-Math.floor(a/z))*z]=1;mapst[t-b%z+(t-Math.floor(b/z))*z]=1;mapst[t-c%z+(t-Math.floor(c/z))*z]=1;
+        ex=t-c%z;ey=t-Math.floor(c/z);setTimeout(function(){ctx.fillStyle="#EE0000";fbl(ex,ey);yu=3;},900)
+        
+                    setTimeout(function(){if(checkaround(myx,myy)==4 && !lose){
+              lose = true;
+              var tmres = "";
+              for (var i=yu+1;i<=3 && 0<i;i++){tmres= temm[i]+tmres;}
+              tmres= ('000000' + (tmres-0)).slice(-6);if(tmres=="000000"){tmres="0000" + ('00' + (myx+myy*bcell)).slice(-2)}
+              console.log(tmres)
+              ctx.fillStyle = "#EE6600";dctex2("YOU LOSE",can.width/2,can.height/2,100);emi(tmres);socket.emit("lose","")}},1200)
+      });
+      socket.on("lost",function(){
+        alert('対戦相手が切断しました');        
+      });
+      function resetb(name){
+        ctx.fillStyle="#EEEEEE";ctx.fillRect(0,0,can.width,can.height);
+        ctx.strokeStyle="000000"
+        ctx.lineWidth=3
+
+        for(var i=0;i<=bcell;i++){
+          ctx.beginPath();
+          ctx.moveTo(bw/bcell*i+k/2,k/2);
+          ctx.lineTo(bw/bcell*i+k/2,bw+k/2);
+          ctx.stroke();
+        }
+        for(var i=0;i<=bcell;i++){
+          ctx.beginPath();
+          ctx.moveTo(k/2,bw/bcell*i+k/2);
+          ctx.lineTo(bw+k/2,bw/bcell*i+k/2);
+          ctx.stroke();
+        }
+        ctx.fillStyle="#EEEE00"
+        fbl(0,0);
+        ctx.fillStyle="#EE0000"
+        fbl(bcell-1,bcell-1);
+        dctex(name,can.width/2,bw+k/2+can.height/10,50);
+        dctex("残り行動回数:"+yu,can.width/2,can.height/10,50);
+      }
+      function fbl(x,y){
+        let ces = bw/(bcell)
+        ctx.fillRect(k/2+ces*x+1.5,k/2+ces*y+1.5,ces-3,ces-3);
+      }
+      function dctex(text,x,y,fs){
+        ctx.fillStyle="#EEEEEE";ctx.fillRect(0,0,can.width,can.height/10-2);
+        ctx.fillStyle = "#000000"
+        ctx.beginPath () ;
+        ctx.font = fs + "px Arial, meiryo, sans-serif" ;
+        var textWidth = ctx.measureText( text ).width ;
+        ctx.fillText( text, (x*2 - textWidth) / 2, y-fs/2) ;
+      }
+      function dctex2(text,x,y,fs){
+        ctx.beginPath () ;
+        ctx.font = fs + "px Arial, meiryo, sans-serif"
+        var textWidth = ctx.measureText( text ).width ;
+        ctx.fillText( text, (x*2 - textWidth) / 2, y-fs/2 ) ;bcell
+      }
+      function checkaround(x,y){
+        if(x!=0 && x!=bcell-1 && y!=0 && y!=bcell-1){var s = mapst[x+y*bcell-bcell]+mapst[x-1+y*bcell]+mapst[x+1+y*bcell]+mapst[x+y*bcell+bcell];}
+        if(x==0 && x!=bcell-1&& y!=0 && y!=bcell-1){var s = mapst[x+y*bcell-bcell]+mapst[x+1+y*bcell]+mapst[x+y*bcell+bcell]+1;}
+        if(x==0 && x!=bcell-1 && y==0 && y!=bcell-1){var s = mapst[x+1+y*bcell]+mapst[x+y*bcell+bcell]+2;}
+        if(x==0 && x!=bcell-1 && y!=0 && y==bcell-1){var s = mapst[x+y*bcell-bcell]+mapst[x+1+y*bcell]+2;}
+        if(x!=0 && x==bcell-1&& y!=0 && y!=bcell-1){var s = mapst[x+y*bcell-bcell]+mapst[x-1+y*bcell]+mapst[x+y*bcell+bcell]+1;}
+        if(x!=0 && x==bcell-1 && y==0 && y!=bcell-1){var s = mapst[x-1+y*bcell]+mapst[x+y*bcell+bcell]+2;}
+        if(x!=0 && x==bcell-1&& y!=0 && y==bcell-1){var s = mapst[x+y*bcell-bcell]+mapst[x-1+y*bcell]+2;}
+        if(x!=0 && x!=bcell-1&& y==0 && y!=bcell-1){var s = mapst[x-1+y*bcell]+mapst[x+1+y*bcell]+mapst[x+y*bcell+bcell]+1;}
+        if(x!=0 && x!=bcell-1 && y!=0 && y==bcell-1){var s = mapst[x+y*bcell-bcell]+mapst[x-1+y*bcell]+mapst[x+1+y*bcell]+1;}
+        return s
+      }
+      
+    </script>
+  </body>
+</html>
