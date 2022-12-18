@@ -15,12 +15,13 @@
         width: 100vw;
         height: 100vh;
         margin: 0 auto;
-        display: flex;
-        justify-content: center;
-        align-items: center;
       }
       .c{
         background-color: #bbbbbb;
+	position:fixed;
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
       }
     </style>
     <div class ="cam">
@@ -28,7 +29,7 @@
     <video width="0" height="0" id="vid" src="https://cdn.glitch.global/66834645-fbc3-416e-8c1a-f8d19b96494f/rule.mp4?v=1658546565468"></video>
     </div>
     <script>
-
+      document.documentElement.style.setProperty( '--vh', window.innerHeight/100 + 'px');
       function handle(event) {
           event.preventDefault();
       }
